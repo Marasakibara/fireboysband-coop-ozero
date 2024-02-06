@@ -6,6 +6,7 @@ import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { useState } from 'react';
 import React from 'react';
 const auth = getAuth();
+
 const HeaderPanelComponent = () => {
   const [Login, setLogin] = useState('' as string | null);
   const onSignOut = () => {
@@ -18,11 +19,7 @@ const HeaderPanelComponent = () => {
       if (user) {
         // User is signed in, see docs for a list of available properties
         // https://firebase.google.com/docs/reference/js/auth.user
-        const uid = user.uid;
-        console.log('logged');
-        console.log(user);
-        console.log(uid);
-        setLogin(user.email);
+        setLogin(user.displayName);
       } else {
         // User is signed out
         // ...
