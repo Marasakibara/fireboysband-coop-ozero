@@ -45,7 +45,11 @@ const HeaderPanelComponent = () => {
           </>
         )
       }
-      before={<Image src={kittyIcon} size={48} />}></PanelHeader>
+      before={
+        <Link href="/">
+          <Image src={kittyIcon} size={48} />
+        </Link>
+      }></PanelHeader>
   );
 };
 

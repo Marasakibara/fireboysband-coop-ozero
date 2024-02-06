@@ -10,6 +10,8 @@ import React from 'react';
 import '@vkontakte/vkui/dist/vkui.css';
 import { app } from '../userVariables';
 import { useLocation } from 'react-router-dom';
+import LoadingElement from '../components/loading/loadingElement';
+import LogInElem from '../components/logInElem/logInElem';
 
 const RegistrationPage = () => {
   const [isLogIn, setIsLogIn] = React.useState(false);
@@ -18,6 +20,7 @@ const RegistrationPage = () => {
   const [password, setPassword] = React.useState('');
   const [passwordCorrect, setPasswordCorrect] = React.useState('');
   const [isCorrect, setIsCorrect] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [isPasswordCorrect, setIsPasswordCorrect] = React.useState(false);
   const [isEmailCorrect, setIsEmailCorrect] = React.useState(false);
   const auth = getAuth(app);
@@ -33,6 +36,11 @@ const RegistrationPage = () => {
   };
   const onChangeValuePassword = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(event.target.value);
+    if (event.target.value === passwordCorrect) {
+      setIsPasswordCorrect(true);
+    } else {
+      setIsPasswordCorrect(false);
+    }
     setIsCorrect(true);
   };
   const onChangeValuePasswordCorrect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,7 +57,8 @@ const RegistrationPage = () => {
     setIsCorrect(true);
   };
   const registation = (email: string, password: string) => {
-    if (isEmailCorrect && isPasswordCorrect && email && password && login) {
+    console.log(isEmailCorrect, isPasswordCorrect, email, password, login);
+    if (isEmailCorrect && isPasswordCorrect && email && password && password.length > 5 && login) {
       setIsCorrect(false);
       createUserWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
@@ -85,8 +94,10 @@ const RegistrationPage = () => {
         //const user = userCredential.user;
 
         window.location.href = '/';
+        setIsLoading(true);
       })
       .catch((error) => {
+        setIsCorrect(false);
         const errorCode = error.code;
         const errorMessage = error.message;
         console.log(errorCode);
@@ -106,14 +117,22 @@ const RegistrationPage = () => {
         // https://firebase.google.com/docs/reference/js/auth.user
         setIsLogIn(true);
         //console.log('authorized');
+        setIsLoading(false);
       } else {
         setIsLogIn(false);
+        setIsLoading(false);
         //console.log('not authorized');
       }
     });
   }, [auth]);
+  if (isLoading) {
+    return <LoadingElement></LoadingElement>;
+  }
+  if (isLogIn) {
+    return <LogInElem></LogInElem>;
+  }
   if (location.pathname === '/registration') {
-    return !isLogIn ? (
+    return (
       <Panel id="new-user">
         <PanelHeader>Регистрация</PanelHeader>
         <Group mode="card">
@@ -144,8 +163,14 @@ const RegistrationPage = () => {
             </FormItem>
 
             <FormItem
-              bottom={password ? 'Пароль введён' : 'Введите пароль'}
-              status={password ? 'valid' : 'error'}
+              bottom={
+                password
+                  ? password.length > 5
+                    ? 'Пароль введён'
+                    : 'Пароль должен содержать не менее 6 символов'
+                  : 'Введите пароль'
+              }
+              status={password ? (password.length > 5 ? 'valid' : 'error') : 'default'}
               top="Пароль"
               htmlFor="pass">
               <Input
@@ -188,8 +213,6 @@ const RegistrationPage = () => {
           </form>
         </Group>
       </Panel>
-    ) : (
-      <>{'Вы уже вошли в систему'}</>
     );
   }
   if (location.pathname === '/auth') {
@@ -225,7 +248,13 @@ const RegistrationPage = () => {
                 placeholder="Введите пароль"
               />
             </FormItem>
-
+            {isCorrect ? (
+              ''
+            ) : (
+              <FormItem
+                status="error"
+                bottom={'Вы неправильно ввели имя пользователя или пароль'}></FormItem>
+            )}
             <FormItem>
               <Button onClick={onClickAuth} size="l">
                 Войти

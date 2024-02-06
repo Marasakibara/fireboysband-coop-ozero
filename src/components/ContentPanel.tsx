@@ -2,6 +2,7 @@ import { Button, FormItem, Input, Panel } from '@vkontakte/vkui';
 import React from 'react';
 import { child, get, getDatabase, ref, set } from 'firebase/database';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import LoadingElement from './loading/loadingElement';
 
 const database = getDatabase();
 const auth = getAuth();
@@ -10,6 +11,7 @@ const ContentPanel = () => {
   const [Login, setLogin] = React.useState('' as string | null);
   const [isAuth, setIsAuth] = React.useState(false);
   const [isSaved, setIsSaved] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
   const onChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
     setIsSaved(false);
@@ -30,31 +32,40 @@ const ContentPanel = () => {
             } else {
               setMessage('Добро пожаловать');
             }
+            setIsLoading(false);
           })
+
           .catch((error) => {
             console.error(error);
           });
         setLogin(user.displayName);
         setIsAuth(true);
       } else {
+        setIsLoading(false);
         setIsAuth(false);
       }
     });
   }, []);
-  return (
-    <>
-      <Panel>
-        <Input
-          placeholder="Отправьте сообщение всем кабанятам"
-          onChange={onChangeInput}
-          value={message}
-          type="text"
-          disabled={!isAuth}
-        />
-        {isAuth && <Button onClick={writeUserData}>Сохранить</Button>}
-        {isSaved && <FormItem status="valid" bottom={'Сохранено'}></FormItem>}
-      </Panel>
-    </>
-  );
+  if (isLoading) {
+    return <LoadingElement></LoadingElement>;
+  }
+
+  if (!isLoading) {
+    return (
+      <>
+        <Panel>
+          <Input
+            placeholder="Отправьте сообщение всем кабанятам"
+            onChange={onChangeInput}
+            value={message}
+            type="text"
+            disabled={!isAuth}
+          />
+          {isAuth && <Button onClick={writeUserData}>Сохранить</Button>}
+          {isSaved && <FormItem status="valid" bottom={'Сохранено'}></FormItem>}
+        </Panel>
+      </>
+    );
+  }
 };
 export default ContentPanel;

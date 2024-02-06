@@ -1,0 +1,22 @@
+.logInEmel {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.textElem {
+  margin-top: 5%;
+  align-items: start;
+  color: rgb(91, 93, 94);
+  font: 700 30px Roboto, sans-serif;
+  @media (max-width: 991px) {
+    max-width: 100%;
+  }
+}
+.ImageIcon {
+  margin-top: 5%;
+  width: 400px;
+  overflow: hidden;
+  max-width: 100%;
+  border-radius: 160px;
+}
