@@ -1,4 +1,6 @@
 import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+
 const firebaseConfig = {
   apiKey: 'AIzaSyAeF7oISUJdFK7mnleDG8ZHMr5XWNrNWn4',
   authDomain: 'secator-fireband.firebaseapp.com',
@@ -10,3 +12,4 @@ const firebaseConfig = {
   measurementId: 'G-R96XMZTMTN',
 };
 export const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);

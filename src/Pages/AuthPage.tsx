@@ -1,100 +1,103 @@
 import { Button, FormItem, Group, Input, Panel, PanelHeader } from '@vkontakte/vkui';
-import {
-  createUserWithEmailAndPassword,
-  getAuth,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  updateProfile,
-} from 'firebase/auth';
 import React from 'react';
 import '@vkontakte/vkui/dist/vkui.css';
-import { app } from '../userVariables';
 import { useLocation } from 'react-router-dom';
 import LoadingElement from '../components/loading/loadingElement';
 import LogInElem from '../components/logInElem/logInElem';
+import { useForm, SubmitHandler, Controller } from 'react-hook-form';
+import { useAuthContext } from '../AuthContext';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from 'firebase/auth';
+interface IFormInput {
+  login: string;
+  email: string;
+  password: string;
+  passwordCorrect: string;
+}
 
-const RegistrationPage = () => {
-  const [isLogIn, setIsLogIn] = React.useState(false);
-  const [email, setEmail] = React.useState('');
-  const [login, setLogin] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [passwordCorrect, setPasswordCorrect] = React.useState('');
+const AuthPage = () => {
   const [isCorrect, setIsCorrect] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [isPasswordCorrect, setIsPasswordCorrect] = React.useState(false);
-  const [isEmailCorrect, setIsEmailCorrect] = React.useState(false);
-  const auth = getAuth(app);
+  const { control, handleSubmit, watch } = useForm({
+    defaultValues: {
+      login: '',
+      email: '',
+      password: '',
+      passwordCorrect: '',
+    },
+  });
+  const [emailValid, setEmailValid] = React.useState(true);
   const location = useLocation();
-  const onChangeValueEmail = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(event.target.value);
-    if (event.target.value.includes('@') && event.target.value.includes('.')) {
-      setIsEmailCorrect(true);
+  const login = watch('login');
+  const email = watch('email');
+  const password = watch('password');
+  const passwordCorrect = watch('passwordCorrect');
+
+  const { auth, isAuth } = useAuthContext();
+  React.useEffect(() => {
+    if (!isAuth) {
+      setIsLoading(false);
     } else {
-      setIsEmailCorrect(false);
+      setIsLoading(false);
     }
-    setIsCorrect(true);
-  };
-  const onChangeValuePassword = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPassword(event.target.value);
-    if (event.target.value === passwordCorrect) {
-      setIsPasswordCorrect(true);
-    } else {
-      setIsPasswordCorrect(false);
-    }
-    setIsCorrect(true);
-  };
-  const onChangeValuePasswordCorrect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPasswordCorrect(event.target.value);
-    if (event.target.value === password) {
-      setIsPasswordCorrect(true);
-    } else {
-      setIsPasswordCorrect(false);
-    }
-    setIsCorrect(true);
-  };
-  const onChangeValueLogin = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setLogin(event.target.value);
-    setIsCorrect(true);
-  };
-  const registation = (email: string, password: string) => {
-    console.log(isEmailCorrect, isPasswordCorrect, email, password, login);
-    if (isEmailCorrect && isPasswordCorrect && email && password && password.length > 5 && login) {
-      setIsCorrect(false);
-      createUserWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          // Signed up
-          const user = userCredential.user;
-          //console.log(user);
-          updateProfile(user, {
-            displayName: login,
-          })
-            .then(() => {
-              window.location.href = '/';
-            })
-            .catch((error) => {
-              // An error occurred
-              // ...
-            });
+  }, [isAuth]);
+  if (isLoading) {
+    return <LoadingElement />;
+  }
+
+  const Registation = (email: string, password: string) => {
+    createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        setIsLoading(true);
+        const user = userCredential.user;
+        //console.log(user);
+        updateProfile(user, {
+          displayName: login,
         })
-        .catch((error) => {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          console.log(errorCode);
-          console.log(errorMessage);
-          // ..
-        });
+          .then(() => {
+            window.location.href = '/';
+          })
+          .catch((error) => {
+            // An error occurred
+            // ...
+          });
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        if (errorCode === 'auth/email-already-in-use') {
+          setEmailValid(false);
+        }
+        console.log(errorMessage);
+        // ..
+      });
+  };
+  const onSubmitRegistration: SubmitHandler<IFormInput> = async (data) => {
+    const { login, email, password, passwordCorrect } = { ...data };
+    if (
+      login &&
+      email.includes('@') &&
+      email.includes('.') &&
+      password.length > 5 &&
+      password === passwordCorrect
+    ) {
+      setIsCorrect(true);
+      Registation(email, password);
     } else {
       setIsCorrect(false);
     }
   };
-  const authAcc = (email: string, password: string) => {
+
+  const Authorization = (email: string, password: string) => {
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         // Signed in
         //const user = userCredential.user;
-
-        window.location.href = '/';
         setIsLoading(true);
+        window.location.href = '/';
       })
       .catch((error) => {
         setIsCorrect(false);
@@ -104,64 +107,55 @@ const RegistrationPage = () => {
         console.log(errorMessage);
       });
   };
-  const onClickRegistration = () => {
-    registation(email, password);
+  const onSubmitAuthorization: SubmitHandler<IFormInput> = async (data) => {
+    const { email, password } = { ...data };
+    if (email.includes('@') && email.includes('.') && password.length > 5) {
+      setIsCorrect(true);
+      Authorization(email, password);
+    } else {
+      setIsCorrect(false);
+    }
   };
-  const onClickAuth = () => {
-    authAcc(email, password);
-  };
-  React.useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // User is signed in, see docs for a list of available properties
-        // https://firebase.google.com/docs/reference/js/auth.user
-        setIsLogIn(true);
-        //console.log('authorized');
-        setIsLoading(false);
-      } else {
-        setIsLogIn(false);
-        setIsLoading(false);
-        //console.log('not authorized');
-      }
-    });
-  }, [auth]);
-  if (isLoading) {
-    return <LoadingElement></LoadingElement>;
-  }
-  if (isLogIn) {
-    return <LogInElem></LogInElem>;
+
+  if (isAuth) {
+    return (
+      <>
+        <LogInElem />
+      </>
+    );
   }
   if (location.pathname === '/registration') {
     return (
       <Panel id="new-user">
         <PanelHeader>Регистрация</PanelHeader>
         <Group mode="card">
-          <form onSubmit={(e) => e.preventDefault()}>
+          <form onSubmit={handleSubmit(onSubmitRegistration)}>
             <FormItem
               bottom={login ? 'Логин введён' : 'Введите логин!'}
               status={login ? 'valid' : 'error'}
               top="Логин">
-              <Input value={login} onChange={onChangeValueLogin} />
+              <Controller
+                name="login"
+                control={control}
+                render={({ field }) => <Input {...field} />}
+              />
             </FormItem>
             <FormItem
               htmlFor="email"
               top="E-mail"
-              status={isEmailCorrect ? 'valid' : 'error'}
+              status={email.includes('@') && email.includes('.') ? 'valid' : 'error'}
               bottom={
-                email ? 'Электронная почта введена верно!' : 'Пожалуйста, введите электронную почту'
+                email.includes('@') && email.includes('.')
+                  ? 'Электронная почта введена верно!'
+                  : 'Пожалуйста, введите электронную почту'
               }
               bottomId="email-type">
-              <Input
-                aria-labelledby="email-type"
-                id="email"
-                type="email"
+              <Controller
                 name="email"
-                value={email}
-                required
-                onChange={onChangeValueEmail}
+                control={control}
+                render={({ field }) => <Input {...field} />}
               />
             </FormItem>
-
             <FormItem
               bottom={
                 password
@@ -173,42 +167,38 @@ const RegistrationPage = () => {
               status={password ? (password.length > 5 ? 'valid' : 'error') : 'default'}
               top="Пароль"
               htmlFor="pass">
-              <Input
-                onChange={onChangeValuePassword}
-                value={password}
-                id="pass"
-                type="password"
-                placeholder="Введите пароль"
+              <Controller
+                name="password"
+                control={control}
+                render={({ field }) => <Input type="password" {...field} />}
               />
             </FormItem>
             <FormItem
-              status={passwordCorrect ? (isPasswordCorrect ? 'valid' : 'error') : 'error'}
+              status={
+                passwordCorrect ? (password === passwordCorrect ? 'valid' : 'error') : 'error'
+              }
               bottom={
                 passwordCorrect
-                  ? isPasswordCorrect
+                  ? password === passwordCorrect
                     ? 'Пароли совпадают'
                     : 'Пароли не совпадают'
                   : 'Пароль может содержать только латинские буквы и цифры.'
               }
               bottomId="passwordDescription">
-              <Input
-                type="password"
-                value={passwordCorrect}
-                onChange={onChangeValuePasswordCorrect}
-                placeholder="Повторите пароль"
-                aria-labelledby="passwordDescription"
+              <Controller
+                name="passwordCorrect"
+                control={control}
+                render={({ field }) => <Input type="password" {...field} />}
               />
             </FormItem>
-            {isCorrect ? (
-              ''
-            ) : (
+            {!isCorrect && (
               <FormItem status="error" bottom={'Данные введены неправильно!'}></FormItem>
             )}
-
+            {!emailValid && (
+              <FormItem status="error" bottom={'Аккаунт с таки мemail уже существует'}></FormItem>
+            )}
             <FormItem>
-              <Button onClick={onClickRegistration} size="l">
-                Зарегистрироваться
-              </Button>
+              <Button type="submit">Зарегистрироваться</Button>
             </FormItem>
           </form>
         </Group>
@@ -220,45 +210,45 @@ const RegistrationPage = () => {
       <Panel id="new-user">
         <PanelHeader>Вход</PanelHeader>
         <Group>
-          <form onSubmit={(e) => e.preventDefault()}>
+          <form onSubmit={handleSubmit(onSubmitAuthorization)}>
             <FormItem
               htmlFor="email"
               top="E-mail"
-              status={email ? 'valid' : 'error'}
+              status={email.includes('@') && email.includes('.') ? 'valid' : 'error'}
               bottom={
-                email ? 'Электронная почта введена верно!' : 'Пожалуйста, введите электронную почту'
+                email.includes('@') && email.includes('.')
+                  ? 'Электронная почта введена верно!'
+                  : 'Пожалуйста, введите электронную почту'
               }
               bottomId="email-type">
-              <Input
-                aria-labelledby="email-type"
-                id="email"
-                type="email"
+              <Controller
                 name="email"
-                value={email}
-                required
-                onChange={onChangeValueEmail}
+                control={control}
+                render={({ field }) => <Input {...field} />}
               />
             </FormItem>
-            <FormItem top="Пароль" htmlFor="pass">
-              <Input
-                onChange={onChangeValuePassword}
-                value={password}
-                id="pass"
-                type="password"
-                placeholder="Введите пароль"
+            <FormItem
+              bottom={
+                password
+                  ? password.length > 5
+                    ? 'Пароль введён'
+                    : 'Пароль должен содержать не менее 6 символов'
+                  : 'Введите пароль'
+              }
+              status={password ? (password.length > 5 ? 'valid' : 'error') : 'default'}
+              top="Пароль"
+              htmlFor="pass">
+              <Controller
+                name="password"
+                control={control}
+                render={({ field }) => <Input type="password" {...field} />}
               />
             </FormItem>
-            {isCorrect ? (
-              ''
-            ) : (
-              <FormItem
-                status="error"
-                bottom={'Вы неправильно ввели имя пользователя или пароль'}></FormItem>
+            {!isCorrect && (
+              <FormItem status="error" bottom={'Вы неправильно ввели E-mail или пароль'}></FormItem>
             )}
             <FormItem>
-              <Button onClick={onClickAuth} size="l">
-                Войти
-              </Button>
+              <Button type="submit">Войти</Button>
             </FormItem>
           </form>
         </Group>
@@ -267,4 +257,4 @@ const RegistrationPage = () => {
   }
 };
 
-export default RegistrationPage;
+export default AuthPage;

@@ -1,51 +1,42 @@
-import { Button, FormItem, Input, Panel } from '@vkontakte/vkui';
+import { Button, Div, FormItem, Input, Panel } from '@vkontakte/vkui';
 import React from 'react';
-import { child, get, getDatabase, ref, set } from 'firebase/database';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import LoadingElement from './loading/loadingElement';
-
-const database = getDatabase();
-const auth = getAuth();
+import { setMessageFB, getMessageFB } from '../firebase';
+import { useAuthContext } from '../AuthContext';
+import { Controller, useForm } from 'react-hook-form';
 const ContentPanel = () => {
-  const [message, setMessage] = React.useState('Войдите в аккаунт');
-  const [Login, setLogin] = React.useState('' as string | null);
-  const [isAuth, setIsAuth] = React.useState(false);
+  const [email, setEmail] = React.useState('' as string | null);
   const [isSaved, setIsSaved] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
-  const onChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [message, setMessage] = React.useState('' as string);
+  const { control } = useForm({
+    defaultValues: {
+      message: 'Войдите в аккаунт',
+    },
+  });
+  const { auth, isAuth } = useAuthContext();
+  const onChangeMessage = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
     setIsSaved(false);
   };
   const writeUserData = () => {
-    set(ref(database, `${Login}`), message);
+    setMessageFB({ email: email as string, message });
     setIsSaved(true);
   };
 
   React.useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const dbRef = ref(getDatabase());
-        get(child(dbRef, `${user.displayName}`))
-          .then((snapshot) => {
-            if (snapshot.exists()) {
-              setMessage(snapshot.val());
-            } else {
-              setMessage('Добро пожаловать');
-            }
-            setIsLoading(false);
-          })
-
-          .catch((error) => {
-            console.error(error);
-          });
-        setLogin(user.displayName);
-        setIsAuth(true);
-      } else {
-        setIsLoading(false);
-        setIsAuth(false);
+    console.log(isAuth, 'content.tsx');
+    if (isAuth) {
+      const user = auth.currentUser;
+      if (user !== null) {
+        getMessageFB({ email: user.email as string }).then((resp) => {
+          setMessage(resp);
+          setEmail(user.email);
+        });
       }
-    });
-  }, []);
+    }
+    setIsLoading(false);
+  }, [auth.currentUser, isAuth]);
   if (isLoading) {
     return <LoadingElement></LoadingElement>;
   }
@@ -54,15 +45,28 @@ const ContentPanel = () => {
     return (
       <>
         <Panel>
-          <Input
-            placeholder="Отправьте сообщение всем кабанятам"
-            onChange={onChangeInput}
-            value={message}
-            type="text"
-            disabled={!isAuth}
-          />
-          {isAuth && <Button onClick={writeUserData}>Сохранить</Button>}
-          {isSaved && <FormItem status="valid" bottom={'Сохранено'}></FormItem>}
+          <form>
+            <Controller
+              name="message"
+              control={control}
+              render={({ field }) => (
+                <>
+                  <FormItem
+                    bottom={isSaved ? 'Сохранено' : ''}
+                    status={isSaved ? 'valid' : 'default'}
+                    top="Сообщение">
+                    <Input
+                      {...field}
+                      value={message}
+                      onChange={onChangeMessage}
+                      disabled={!isAuth}
+                    />
+                  </FormItem>
+                </>
+              )}
+            />
+          </form>
+          <Div>{isAuth && <Button onClick={writeUserData}>Сохранить</Button>}</Div>
         </Panel>
       </>
     );
