@@ -2,7 +2,7 @@ import { Button, Div, FormItem, Input, Panel } from '@vkontakte/vkui';
 import React from 'react';
 import LoadingElement from './loading/loadingElement';
 import { setMessageFB, getMessageFB } from '../firebase';
-import { useAuthContext } from '../AuthContext';
+import { useAuth } from '../AuthContext';
 import { Controller, useForm } from 'react-hook-form';
 const ContentPanel = () => {
   const [email, setEmail] = React.useState('' as string | null);
@@ -14,7 +14,7 @@ const ContentPanel = () => {
       message: 'Войдите в аккаунт',
     },
   });
-  const { auth, isAuth } = useAuthContext();
+  const { auth, isAuth } = useAuth();
   const onChangeMessage = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
     setIsSaved(false);

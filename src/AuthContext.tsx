@@ -14,4 +14,8 @@ const defaultState = {
 };
 
 export const AuthContext = React.createContext<IAuthContext>(defaultState);
-export const useAuthContext = () => useContext(AuthContext);
+export const useAuth = () => {
+  const { auth, isAuth } = useContext(AuthContext);
+
+  return { auth, isAuth };
+};

@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom';
 import LoadingElement from '../components/loading/loadingElement';
 import LogInElem from '../components/logInElem/logInElem';
 import { useForm, SubmitHandler, Controller } from 'react-hook-form';
-import { useAuthContext } from '../AuthContext';
+import { useAuth } from '../AuthContext';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -36,7 +36,7 @@ const AuthPage = () => {
   const password = watch('password');
   const passwordCorrect = watch('passwordCorrect');
 
-  const { auth, isAuth } = useAuthContext();
+  const { auth, isAuth } = useAuth();
   React.useEffect(() => {
     if (!isAuth) {
       setIsLoading(false);

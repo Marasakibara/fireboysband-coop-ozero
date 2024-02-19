@@ -5,11 +5,11 @@ import { Button, Image } from '@vkontakte/vkui';
 import { signOut } from 'firebase/auth';
 import { useState } from 'react';
 import React from 'react';
-import { useAuthContext } from '../AuthContext';
+import { useAuth } from '../AuthContext';
 
 const HeaderPanelComponent = () => {
   const [Login, setLogin] = useState('' as string | null);
-  const { auth, isAuth } = useAuthContext();
+  const { auth, isAuth } = useAuth();
   const onSignOut = () => {
     signOut(auth).then(() => {
       setLogin(null);
